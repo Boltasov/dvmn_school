@@ -2,8 +2,17 @@ from datacenter.models import Schoolkid, Lesson, Chastisement, Commendation, Mar
 
 
 def get_schoolkid(full_name: str):
-    kid = Schoolkid.objects.get(full_name__contains=full_name)
-    print(f'Ученик: {kid}')
+    kids = Schoolkid.objects.filter(full_name__contains=full_name)
+    if kids.count() <= 0:
+        print('Не найдено учеников по запросу. Проверьте правильность указанных фамилии и имени\n'
+              'Пример: Носов Иван')
+        return
+    if kids.count() > 1:
+        print('Найдено больше одного ученика по запросу. Добавьте и фамилию, и имя, и отчество\n'
+              'Пример: Носов Иван Алексеевич')
+        return
+    kid = kids.first()
+    print(f'Выбранный ученик: {kid}')
     return kid
 
 
@@ -17,7 +26,16 @@ def remove_chastisements(schoolkid: Schoolkid):
     print('Замечания удалены')
 
 
-def create_commendation(schoolkid: Schoolkid, subject_name: str):
-    lesson = Lesson.objects.filter(subject__title__contains=subject_name, year_of_study=schoolkid.year_of_study, group_letter=schoolkid.group_letter).order_by('-date').first()
-    Commendation.objects.create(text='Хвалю!', created=lesson.date, schoolkid=schoolkid, subject=lesson.subject, teacher=lesson.teacher)
-    print('Похвала добавлена')
+def create_commendation(schoolkid: Schoolkid, subject_name: str, text: str):
+    lesson = Lesson.objects.filter(subject__title__contains=subject_name,
+                                   year_of_study=schoolkid.year_of_study,
+                                   group_letter=schoolkid.group_letter).order_by('-date').first()
+    if not lesson:
+        print('Уроки по этому предмету не найдены. Введите название предмета так, как оно указано на сайте.')
+    else:
+        Commendation.objects.create(text=text,
+                                    created=lesson.date,
+                                    schoolkid=schoolkid,
+                                    subject=lesson.subject,
+                                    teacher=lesson.teacher)
+        print('Похвала добавлена')
